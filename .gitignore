@@ -1,0 +1,38 @@
+.venv
+.pytest_cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# Python build and test artifacts
+build/
+dist/
+*.egg-info/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.pyright/
+.ruff_cache/
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# Generated model binaries
+models/**/*.pkl
+models/**/*.joblib
+models/*/*.pkl
+models/*/*.joblib
+
+# Local secrets and OS files
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
+*.log

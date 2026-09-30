@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sahyog ICD — Architecture Diagram</title>
+<style>
+  :root {
+    --navy: #1B2A4A;
+    --blue: #1565C0;
+    --ltblue: #E3F2FD;
+    --green: #2E7D32;
+    --ltgreen: #E8F5E9;
+    --orange: #E65100;
+    --ltorange: #FFF3E0;
+    --red: #C62828;
+    --ltred: #FFEBEE;
+    --purple: #4A148C;
+    --ltpurple: #F3E5F5;
+    --gray: #F5F5F5;
+    --darkgray: #455A64;
+    --text: #1A1A1A;
+    --white: #FFFFFF;
+    --border: #CFD8DC;
+    --arrow: #78909C;
+    font-family: 'Segoe UI', Calibri, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #F0F4F8; color: var(--text); }
+
+  .page { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+  /* Header */
+  .header { background: var(--navy); color: white; padding: 20px 28px; border-radius: 10px; margin-bottom: 20px; }
+  .header h1 { font-size: 22px; font-weight: 700; letter-spacing: 0.3px; }
+  .header p { font-size: 13px; color: #90CAF9; margin-top: 4px; }
+  .header-meta { display: flex; gap: 24px; margin-top: 12px; }
+  .header-meta span { font-size: 12px; color: #B0BEC5; }
+  .header-meta strong { color: #E3F2FD; }
+
+  /* Legend */
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #546E7A; }
+  .legend-dot { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
+
+  /* Main layout */
+  .diagram { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 0; }
+  
+  /* Layer labels on left */
+  .layers-col { display: flex; flex-direction: column; gap: 0; width: 120px; margin-right: 12px; }
+
+  .layer-label {
+    writing-mode: horizontal-tb;
+    background: var(--navy);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+  }
+
+  /* Full-width layout */
+  .full-layout { display: flex; flex-direction: column; gap: 12px; }
+
+  .layer-row {
+    display: flex;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .layer-tag {
+    background: var(--navy);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    padding: 12px 6px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    flex-shrink: 0;
+  }
+
+  .layer-content { flex: 1; }
+
+  /* Boxes */
+  .box {
+    border-radius: 8px;
+    padding: 12px 14px;
+    border: 1.5px solid transparent;
+    height: 100%;
+  }
+  .box h3 { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+  .box ul { list-style: none; padding: 0; }
+  .box ul li { font-size: 11.5px; padding: 2px 0 2px 14px; position: relative; color: #37474F; line-height: 1.4; }
+  .box ul li::before { content: "▸"; position: absolute; left: 0; color: #90A4AE; font-size: 10px; top: 3px; }
+
+  .box-capture { background: var(--ltblue); border-color: #90CAF9; }
+  .box-capture h3 { color: var(--blue); }
+  .box-ext { background: var(--ltorange); border-color: #FFCC80; }
+  .box-ext h3 { color: var(--orange); }
+  .box-engine { background: var(--ltgreen); border-color: #A5D6A7; }
+  .box-engine h3 { color: var(--green); }
+  .box-monitor { background: var(--ltpurple); border-color: #CE93D8; }
+  .box-monitor h3 { color: var(--purple); }
+  .box-reject { background: var(--ltred); border-color: #EF9A9A; }
+  .box-reject h3 { color: var(--red); }
+  .box-dark { background: var(--navy); }
+  .box-dark h3 { color: #90CAF9; }
+  .box-dark ul li { color: #B0BEC5; }
+  .box-dark ul li::before { color: #546E7A; }
+
+  /* Decision flow */
+  .decision-flow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  .decision-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .step-num {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: white;
+    flex-shrink: 0;
+  }
+  .step-label {
+    font-size: 10px; color: #546E7A; text-align: center; max-width: 80px; line-height: 1.3;
+  }
+  .flow-arrow {
+    font-size: 18px; color: #90A4AE; margin-bottom: 14px; flex-shrink: 0;
+  }
+
+  /* Routing bands */
+  .routing-bands { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+  .band {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 10px; border-radius: 6px; font-size: 11.5px;
+  }
+  .band-score { font-weight: 700; min-width: 90px; font-size: 12px; }
+  .band-label { font-weight: 600; min-width: 90px; }
+  .band-desc { color: #546E7A; font-size: 11px; }
+  .band-approve { background: #E8F5E9; border: 1px solid #A5D6A7; }
+  .band-approve .band-score { color: #2E7D32; }
+  .band-approve .band-label { color: #1B5E20; }
+  .band-flag { background: #FFF8E1; border: 1px solid #FFE082; }
+  .band-flag .band-score { color: #F57F17; }
+  .band-flag .band-label { color: #E65100; }
+  .band-refer { background: #FFF3E0; border: 1px solid #FFCC80; }
+  .band-refer .band-score { color: #E65100; }
+  .band-refer .band-label { color: #BF360C; }
+  .band-reject { background: #FFEBEE; border: 1px solid #EF9A9A; }
+  .band-reject .band-score { color: #C62828; }
+  .band-reject .band-label { color: #B71C1C; }
+
+  /* Metrics row */
+  .metrics-row { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+  .metric-card {
+    background: white; border: 1.5px solid var(--border);
+    border-radius: 8px; padding: 10px 14px; flex: 1; min-width: 130px;
+  }
+  .metric-card .label { font-size: 10px; color: #78909C; text-transform: uppercase; letter-spacing: 0.5px; }
+  .metric-card .value { font-size: 18px; font-weight: 700; color: var(--navy); margin-top: 2px; }
+  .metric-card .sublabel { font-size: 10px; color: #90A4AE; }
+
+  /* Divider arrow */
+  .layer-arrow { text-align: center; font-size: 20px; color: #90A4AE; margin: 2px 0; padding-left: 40px; }
+
+  /* Footer */
+  .footer { background: var(--navy); color: #B0BEC5; padding: 12px 20px; border-radius: 8px; font-size: 11px; margin-top: 16px; display: flex; justify-content: space-between; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>Instant Credit Decisioning System — Architecture Diagram</h1>
+    <p>Sahyog Two-Wheeler Finance &nbsp;·&nbsp; Part B System Design (B3)</p>
+    <div class="header-meta">
+      <span><strong>Candidate:</strong> Devang Jat</span>
+      <span><strong>Assignment:</strong> HIB-DS-INT-2026-D</span>
+      <span><strong>Model:</strong> XGBoost v1 · AUC 0.683 · Optimal cut-off PD ≤ 0.33</span>
+      <span><strong>Target latency:</strong> &lt;2 min end-to-end</span>
+    </div>
+  </div>
+
+  <!-- Key metrics -->
+  <div class="metrics-row">
+    <div class="metric-card">
+      <div class="label">Model AUC</div>
+      <div class="value">0.683</div>
+      <div class="sublabel">XGBoost · Gini 0.367</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">Optimal PD Cut-off</div>
+      <div class="value">0.33</div>
+      <div class="sublabel">Maximises portfolio profit</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">Approval Rate</div>
+      <div class="value">96.9%</div>
+      <div class="sublabel">At cut-off 0.33</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">Expected Bad Rate</div>
+      <div class="value">5.5%</div>
+      <div class="sublabel">vs 10.6% baseline</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">Straight-through</div>
+      <div class="value">~70%</div>
+      <div class="sublabel">PD ≤ 0.20 auto-approve</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">Decision Latency</div>
+      <div class="value">&lt;30s</div>
+      <div class="sublabel">p95 end-to-end</div>
+    </div>
+  </div>
+
+  <!-- Main architecture -->
+  <div class="full-layout" style="margin-top:16px">
+
+    <!-- Layer 1: Capture -->
+    <div class="layer-row">
+      <div class="layer-tag" style="background:#1565C0">Layer 1 — Capture</div>
+      <div class="layer-content">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px">
+          <div class="box box-capture">
+            <h3>📱 Dealer App (Android/iOS PWA)</h3>
+            <ul>
+              <li>Applicant personal & income details</li>
+              <li>Vehicle + down payment info</li>
+              <li>Local field validation (age ≥18, FOIR, pincode)</li>
+              <li>Encrypted submission (TLS 1.3)</li>
+            </ul>
+          </div>
+          <div class="box box-capture">
+            <h3>🪪 KYC & Consent Capture</h3>
+            <ul>
+              <li>Aadhaar OTP via DigiLocker</li>
+              <li>Document OCR (photo upload fallback)</li>
+              <li>Digital consent for bureau + AA pull</li>
+              <li>Timestamp + IP logged</li>
+            </ul>
+          </div>
+          <div class="box box-capture">
+            <h3>🏪 Sourcing Channels</h3>
+            <ul>
+              <li>Dealer walk-in (160+ dealerships)</li>
+              <li>DSA (field agents)</li>
+              <li>Digital partner</li>
+              <li>Branch counter</li>
+            </ul>
+          </div>
+          <div class="box box-capture">
+            <h3>📋 Application API</h3>
+            <ul>
+              <li>REST endpoint receives form payload</li>
+              <li>Idempotency key to prevent duplicates</li>
+              <li>Returns application_id immediately</li>
+              <li>Triggers enrichment pipeline async</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer-arrow">↓ Application payload passes to enrichment ↓</div>
+
+    <!-- Layer 2: Enrichment -->
+    <div class="layer-row">
+      <div class="layer-tag" style="background:#E65100">Layer 2 — Enrichment</div>
+      <div class="layer-content">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+          <div class="box box-ext">
+            <h3>📊 Credit Bureau (CIBIL / Experian)</h3>
+            <ul>
+              <li>Bureau score (300–900) or -1 NTC</li>
+              <li>Enquiries last 6 months</li>
+              <li>Existing EMI obligations</li>
+              <li>Bureau vintage months</li>
+              <li style="color:#C62828;font-weight:600">⚠ Timeout &gt;8s → "bureau unavailable" flag → auto-refer to officer</li>
+            </ul>
+          </div>
+          <div class="box box-ext">
+            <h3>🏦 Account Aggregator (AA)</h3>
+            <ul>
+              <li>Net monthly credits (verifies income)</li>
+              <li>Salary regularity score</li>
+              <li>Existing EMI debits from bank</li>
+              <li>Mandatory for NTC applicants</li>
+              <li style="color:#C62828;font-weight:600">⚠ Consent refused → declared income only → refer if FOIR &gt;50%</li>
+            </ul>
+          </div>
+          <div class="box box-ext">
+            <h3>🚫 Fraud & Negative List</h3>
+            <ul>
+              <li>Sahyog internal blacklist check</li>
+              <li>Industry fraud consortia lookup</li>
+              <li>Velocity check: &gt;2 apps in 30 days</li>
+              <li>Duplicate Aadhaar / mobile / vehicle</li>
+              <li style="color:#C62828;font-weight:600">⚠ Match → hard REJECT (no ML score)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer-arrow">↓ Enriched application passes to decision engine ↓</div>
+
+    <!-- Layer 3: Decision Engine -->
+    <div class="layer-row">
+      <div class="layer-tag" style="background:#2E7D32">Layer 3 — Decision Engine</div>
+      <div class="layer-content">
+        <div style="display:grid;grid-template-columns:2fr 3fr;gap:10px">
+          <!-- Step flow -->
+          <div class="box box-engine">
+            <h3>⚙️ Decision Pipeline (Strict Order)</h3>
+            <div class="decision-flow" style="margin-top:12px">
+              <div class="decision-step">
+                <div class="step-num" style="background:#C62828">1</div>
+                <div class="step-label">Hard Policy Rules<br><span style="color:#C62828;font-weight:700">REJECT if failed</span></div>
+              </div>
+              <div class="flow-arrow">→</div>
+              <div class="decision-step">
+                <div class="step-num" style="background:#E65100">2</div>
+                <div class="step-label">Fraud Checks<br><span style="color:#E65100;font-weight:700">REJECT / REFER</span></div>
+              </div>
+              <div class="flow-arrow">→</div>
+              <div class="decision-step">
+                <div class="step-num" style="background:#1565C0">3</div>
+                <div class="step-label">XGBoost ML Score<br><span style="color:#1565C0;font-weight:700">PD 0–1</span></div>
+              </div>
+              <div class="flow-arrow">→</div>
+              <div class="decision-step">
+                <div class="step-num" style="background:#2E7D32">4</div>
+                <div class="step-label">Routing Decision<br><span style="color:#2E7D32;font-weight:700">+Reason codes</span></div>
+              </div>
+            </div>
+            <div style="margin-top:14px;font-size:11px;color:#455A64">
+              <strong>Hard policy thresholds:</strong> Age &lt;18 · LTV &gt;90% · FOIR &gt;65% · Negative list
+            </div>
+            <div style="margin-top:8px;font-size:11px;color:#455A64">
+              <strong>Top 10 ML features:</strong> FOIR · Bureau score · Dealer ID · Occupation · Income proof · LTV · NTC flag · Enquiries · Down payment · Monthly income
+            </div>
+          </div>
+
+          <!-- Routing bands -->
+          <div class="box box-engine">
+            <h3>🔀 Decision Routing Bands</h3>
+            <div class="routing-bands">
+              <div class="band band-approve">
+                <div class="band-score">PD ≤ 0.20</div>
+                <div class="band-label">✅ AUTO APPROVE</div>
+                <div class="band-desc">Straight-through · No officer review · ~70% of volume · Instant disbursal eligible</div>
+              </div>
+              <div class="band band-flag">
+                <div class="band-score">0.20 &lt; PD ≤ 0.33</div>
+                <div class="band-label">✅ APPROVE + FLAG</div>
+                <div class="band-desc">Approved with monitoring flag · Appears in collections early-warning list · ~27% of volume</div>
+              </div>
+              <div class="band band-refer">
+                <div class="band-score">0.33 &lt; PD ≤ 0.55</div>
+                <div class="band-label">⏸ REFER TO OFFICER</div>
+                <div class="band-desc">Pre-scored queue with top 3 SHAP reasons · Officer SLA 30 min · ~20% of volume</div>
+              </div>
+              <div class="band band-reject">
+                <div class="band-score">PD &gt; 0.55</div>
+                <div class="band-label">❌ AUTO REJECT</div>
+                <div class="band-desc">Reason codes sent to applicant · Grievance redressal offered · &lt;3% of volume</div>
+              </div>
+            </div>
+            <div style="margin-top:10px;padding:8px;background:#E8EAF6;border-radius:6px;font-size:11px;color:#283593">
+              <strong>SHAP Reason Codes (all decisions):</strong> Up to 3 plain-language reasons generated per decision. Displayed in dealer app + included in RBI key fact statement. Examples: <em>"Monthly obligations exceed 65% of income"</em> · <em>"Limited credit history"</em> · <em>"Income unverified"</em>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer-arrow">↓ Decisions logged → monitoring & feedback loop ↓</div>
+
+    <!-- Layer 4: Monitoring -->
+    <div class="layer-row">
+      <div class="layer-tag" style="background:#4A148C">Layer 4 — Monitoring</div>
+      <div class="layer-content">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px">
+          <div class="box box-monitor">
+            <h3>📉 Score Drift (PSI)</h3>
+            <ul>
+              <li>Population Stability Index weekly</li>
+              <li>PSI &gt;0.20 → model review alert</li>
+              <li>PSI &gt;0.25 → auto-retrain trigger</li>
+              <li>Feature-level drift per variable</li>
+            </ul>
+          </div>
+          <div class="box box-monitor">
+            <h3>📊 Portfolio Monitoring</h3>
+            <ul>
+              <li>Bad rate by: channel · state · occupation · vehicle segment</li>
+              <li>Dealer-level monthly bad rate</li>
+              <li>Dealer flagged if &gt;2σ from mean</li>
+              <li>Approval rate trend by cut-off</li>
+            </ul>
+          </div>
+          <div class="box box-monitor">
+            <h3>🔒 Audit Log (Immutable)</h3>
+            <ul>
+              <li>Every decision: input snapshot + score + reasons + operator ID</li>
+              <li>Officer override with mandatory reason code</li>
+              <li>7-year retention</li>
+              <li>India data residency (AWS Mumbai / Azure Central India)</li>
+            </ul>
+          </div>
+          <div class="box box-monitor">
+            <h3>🔄 Retraining Schedule</h3>
+            <ul>
+              <li>Quarterly: 18-month observation window</li>
+              <li>Triggered: PSI &gt;0.20 or bad rate gap &gt;3pp for 2 months</li>
+              <li>Recalibration (Platt): if AUC stable but calibration drifts</li>
+              <li>Model versioning with rollback</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <span>Sahyog Two-Wheeler Finance · Instant Credit Decisioning System · Architecture Diagram</span>
+    <span>Devang Jat · HIB-DS-INT-2026-D · September 2026</span>
+  </div>
+
+</div>
+</body>
+</html>
