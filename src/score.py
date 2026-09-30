@@ -12,6 +12,46 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 MODEL_DIR = PROJECT_ROOT / "models"
 THRESHOLD = 0.33
 
+def _money(v):
+    return f"Rs {v:,.0f}"
+
+
+# Turns the applicant's actual value into a short phrase (keys are the original feature names)
+REASON_PHRASES = {
+    "bureau_score_clean": lambda v: "No credit bureau score on file" if pd.isna(v) else f"Credit bureau score of {v:.0f}",
+    "is_new_to_credit": lambda v: "New to credit (no bureau history)" if v == 1 else "Existing credit history",
+    "bureau_vintage_months": lambda v: f"Credit history is only {v:.0f} months long",
+    "enquiries_last_6m": lambda v: f"{v:.0f} credit enquiries in the last 6 months",
+    "existing_emi": lambda v: f"Existing monthly loan payments of {_money(v)}",
+    "monthly_income": lambda v: f"Monthly income of {_money(v)}",
+    "foir_pct": lambda v: f"Debt payments take {v:.0f}% of income (FOIR)",
+    "foir_above_100": lambda v: "Debt payments exceed income" if v == 1 else "Debt payments within income",
+    "loan_amount": lambda v: f"Loan amount of {_money(v)}",
+    "ltv_pct": lambda v: f"Loan is {v:.0f}% of vehicle value (LTV)",
+    "down_payment": lambda v: f"Down payment of {_money(v)}",
+    "emi": lambda v: f"Monthly instalment of {_money(v)}",
+    "tenure_months": lambda v: f"Loan term of {v:.0f} months",
+    "interest_rate_pct": lambda v: f"Interest rate of {v:.1f}%",
+    "years_at_residence": lambda v: f"Only {v:.1f} years at current residence",
+    "has_coapplicant": lambda v: "Co-applicant present" if v == 1 else "No co-applicant",
+    "on_road_price": lambda v: f"Vehicle price of {_money(v)}",
+    "dealer_id": lambda v: f"Dealer {v}",
+    "occupation_type": lambda v: f"Occupation: {v}",
+    "income_proof_type": lambda v: f"Income proof: {v}",
+    "residence_type": lambda v: f"Residence type: {v}",
+    "vehicle_segment": lambda v: f"Vehicle category: {v}",
+    "sourcing_channel": lambda v: f"Application channel: {v}",
+    "city_tier": lambda v: f"City tier: {v}",
+    "state": lambda v: f"State: {v}",
+    "age": lambda v: f"Age {v:.0f}",
+    "application_month": lambda v: f"Application month: {v}",
+}
+
+
+def reason_sentence(feature, value):
+    fallback = lambda v: f"{feature.replace('_', ' ').capitalize()}: {v}"
+    return f"{REASON_PHRASES.get(feature, fallback)(value)} (raises risk)"
+
 
 def score_application(app: dict) -> dict:
     """Return probability of default, decision, and the three main reasons.
@@ -47,60 +87,25 @@ def score_application(app: dict) -> dict:
     try:
         import shap
 
-        transformed = model.named_steps["prep"].transform(X)
+        prep = model.named_steps["prep"]
+        transformed = prep.transform(X)
+        values = shap.TreeExplainer(model.named_steps["model"]).shap_values(transformed)
+        contributions = np.asarray(values)
+        if contributions.ndim == 3:
+            contributions = contributions[:, :, 1]
+        contributions = contributions[0]
 
-        values = shap.TreeExplainer(
-            model.named_steps["model"]
-        ).shap_values(transformed)
+        # One-hot columns are summed back to their original feature
+        groups = []
+        for name in prep.get_feature_names_out():
+            clean = name.split("__", 1)[-1]
+            matches = [c for c in expected if clean == c or clean.startswith(c + "_")]
+            groups.append(max(matches, key=len) if matches else clean)
+        by_feature = pd.Series(contributions, index=groups).groupby(level=0).sum()
 
-        contributions = np.asarray(values)[0]
-        top_indices = np.argsort(np.abs(contributions))[-3:][::-1]
-
-        names = model.named_steps["prep"].get_feature_names_out()
-
-        reasons = []
-
-        reason_map = {
-            "foir_pct": "High FOIR indicates a higher debt burden relative to income.",
-            "foir_above_100": "FOIR is above 100%, indicating significant repayment burden.",
-            "bureau_score_clean": "Bureau score is affecting the predicted credit risk.",
-            "is_new_to_credit": "Limited credit history increases uncertainty in repayment behavior.",
-            "enquiries_last_6m": "Recent credit enquiries are affecting the predicted risk.",
-            "existing_emi": "Existing EMI obligations affect repayment capacity.",
-            "loan_amount": "The requested loan amount is affecting the predicted risk.",
-            "ltv_pct": "Higher loan-to-value is affecting the predicted risk.",
-            "monthly_income": "Monthly income is affecting the predicted repayment capacity.",
-            "down_payment": "Down payment is affecting the predicted risk.",
-            "tenure_months": "Loan tenure is affecting the predicted risk.",
-            "interest_rate_pct": "Interest rate is affecting the predicted repayment burden.",
-            "emi": "The EMI amount is affecting repayment capacity.",
-            "bureau_vintage_months": "Credit history length is affecting the predicted risk.",
-            "age": "Applicant age is affecting the predicted risk.",
-            "years_at_residence": "Residence stability is affecting the predicted risk.",
-            "has_coapplicant": "Co-applicant status is affecting the predicted risk.",
-        }
-
-        for i in top_indices:
-            feature_name = names[i]
-
-            # Remove sklearn preprocessing prefixes
-            clean_name = (
-                feature_name
-                .replace("num__", "")
-                .replace("cat__", "")
-            )
-
-            # Handle one-hot encoded categorical features
-            base_name = clean_name.split("_")[0]
-
-            if clean_name in reason_map:
-                reason = reason_map[clean_name]
-            elif base_name in reason_map:
-                reason = reason_map[base_name]
-            else:
-                reason = f"{clean_name} is influencing the predicted default risk."
-
-            reasons.append(reason)
+        # Only factors that pushed this applicant's risk UP are reasons
+        top = by_feature[by_feature > 0].nlargest(3)
+        reasons = [reason_sentence(f, features.iloc[0][f]) for f in top.index]
 
     except ImportError as exc:
         raise RuntimeError(

@@ -199,7 +199,7 @@
     <div class="header-meta">
       <span><strong>Candidate:</strong> Devang Jat</span>
       <span><strong>Assignment:</strong> HIB-DS-INT-2026-D</span>
-      <span><strong>Model:</strong> XGBoost v1 · AUC 0.683 · Optimal cut-off PD ≤ 0.33</span>
+      <span><strong>Model:</strong> XGBoost v1 · AUC 0.687 · Approve cut-off PD ≤ 0.33</span>
       <span><strong>Target latency:</strong> &lt;2 min end-to-end</span>
     </div>
   </div>
@@ -208,17 +208,17 @@
   <div class="metrics-row">
     <div class="metric-card">
       <div class="label">Model AUC</div>
-      <div class="value">0.683</div>
-      <div class="sublabel">XGBoost · Gini 0.367</div>
+      <div class="value">0.687</div>
+      <div class="sublabel">XGBoost · Gini 0.374</div>
     </div>
     <div class="metric-card">
-      <div class="label">Optimal PD Cut-off</div>
+      <div class="label">Approve Cut-off</div>
       <div class="value">0.33</div>
-      <div class="sublabel">Maximises portfolio profit</div>
+      <div class="sublabel">Approve at or below; refer 0.33–0.50</div>
     </div>
     <div class="metric-card">
       <div class="label">Approval Rate</div>
-      <div class="value">96.9%</div>
+      <div class="value">96.7%</div>
       <div class="sublabel">At cut-off 0.33</div>
     </div>
     <div class="metric-card">
@@ -228,8 +228,8 @@
     </div>
     <div class="metric-card">
       <div class="label">Straight-through</div>
-      <div class="value">~70%</div>
-      <div class="sublabel">PD ≤ 0.20 auto-approve</div>
+      <div class="value">~91%</div>
+      <div class="sublabel">PD ≤ 0.20 · ~91% of volume</div>
     </div>
     <div class="metric-card">
       <div class="label">Decision Latency</div>
@@ -362,7 +362,7 @@
               <strong>Hard policy thresholds:</strong> Age &lt;18 · LTV &gt;90% · FOIR &gt;65% · Negative list
             </div>
             <div style="margin-top:8px;font-size:11px;color:#455A64">
-              <strong>Top 10 ML features:</strong> FOIR · Bureau score · Dealer ID · Occupation · Income proof · LTV · NTC flag · Enquiries · Down payment · Monthly income
+              <strong>Top 10 ML features:</strong> Bureau score · FOIR · Dealer ID · Occupation · LTV · Bureau vintage · Income proof · Sourcing channel · Application month · Enquiries
             </div>
           </div>
 
@@ -373,22 +373,22 @@
               <div class="band band-approve">
                 <div class="band-score">PD ≤ 0.20</div>
                 <div class="band-label">✅ AUTO APPROVE</div>
-                <div class="band-desc">Straight-through · No officer review · ~70% of volume · Instant disbursal eligible</div>
+                <div class="band-desc">Straight-through · No officer review · ~91% of volume · Instant disbursal eligible</div>
               </div>
               <div class="band band-flag">
                 <div class="band-score">0.20 &lt; PD ≤ 0.33</div>
                 <div class="band-label">✅ APPROVE + FLAG</div>
-                <div class="band-desc">Approved with monitoring flag · Appears in collections early-warning list · ~27% of volume</div>
+                <div class="band-desc">Approved · 0.20 < PD ≤ 0.33 · ~6% of volume</div>
               </div>
               <div class="band band-refer">
-                <div class="band-score">0.33 &lt; PD ≤ 0.55</div>
+                <div class="band-score">0.33 &lt; PD ≤ 0.50</div>
                 <div class="band-label">⏸ REFER TO OFFICER</div>
-                <div class="band-desc">Pre-scored queue with top 3 SHAP reasons · Officer SLA 30 min · ~20% of volume</div>
+                <div class="band-desc">Pre-scored queue with top 3 SHAP reasons · Officer SLA 30 min · ~2% of volume</div>
               </div>
               <div class="band band-reject">
-                <div class="band-score">PD &gt; 0.55</div>
+                <div class="band-score">PD &gt; 0.50</div>
                 <div class="band-label">❌ AUTO REJECT</div>
-                <div class="band-desc">Reason codes sent to applicant · Grievance redressal offered · &lt;3% of volume</div>
+                <div class="band-desc">Reason codes sent to applicant · Grievance redressal offered · ~1% of volume</div>
               </div>
             </div>
             <div style="margin-top:10px;padding:8px;background:#E8EAF6;border-radius:6px;font-size:11px;color:#283593">
