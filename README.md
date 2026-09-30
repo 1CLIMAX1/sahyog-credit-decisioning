@@ -19,56 +19,42 @@ requirements.txt
 README.md
 ```
 
-## Reproduce the current model workflow
+## Reproduce the model workflow
 
-Use Python 3.10 or newer. From the project root, create an environment and install dependencies:
+Use Python 3.10 or newer. From the project root, create and activate a virtual environment, then install the dependencies:
 
-```bash
+```powershell
 python -m venv .venv
-# Windows PowerShell: .venv\Scripts\Activate.ps1
-# macOS/Linux: source .venv/bin/activate
+.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 ```
 
-The supplied source datasets are `data/loan_applications.csv` and `data/repayment_history.csv`. The notebooks document exploration and the current temporal split (training applications before 2025-04-01, validation applications on or after that date). From the project root, run the following to build the target, make the temporal split, prepare features, and save both models:
+On macOS or Linux, activate it with `source .venv/bin/activate` instead. The input datasets are `data/loan_applications.csv` and `data/repayment_history.csv`.
+
+With the environment active, retrain both models from the project root with one command:
+
+```bash
+python -m src.train
+```
+
+The command builds the 12-EMI target using the fixed observation date `2026-08-31`, keeps fully observed applications, sorts them by application date, then uses the first 80% of rows for training and the last 20% for validation. It reports validation AUC and saves `models/lr_model.pkl`, `models/xgb_model.pkl`, and `models/feature_columns.pkl`. The models use random seed 42.
+
+This script split is not the same as the evaluation in `notebooks/model.ipynb`: the notebook uses a `2025-04-01` date cutoff and removes earlier training applications belonging to validation applicants. The script's 80/20 row split does not remove applicant overlap. Use the notebook when reproducing those notebook results; use `python -m src.train` to retrain the saved models.
+
+`requirements.txt` does not pin package versions. For closer repeatability across machines, use the same Python and dependency versions; the fixed model seed alone does not guarantee identical results across different library versions or platforms.
+
+After training, score one raw row from the application dataset:
 
 ```python
 import pandas as pd
-from src.target import build_target
-from src.features import get_feature_columns, prepare_features
-from src.train import train_models
-
-applications = pd.read_csv("data/loan_applications.csv")
-repayments = pd.read_csv("data/repayment_history.csv")
-targets = build_target(repayments, as_of="2026-08-31")
-rows = applications.merge(targets, on="application_id", how="inner")
-rows = rows.loc[rows["is_fully_observed"]].copy()
-application_dates = pd.to_datetime(rows["application_date"], format="%d-%m-%Y")
-train_rows = rows.loc[application_dates < "2025-04-01"].copy()
-validation_rows = rows.loc[application_dates >= "2025-04-01"].copy()
-
-train_features = prepare_features(train_rows)
-validation_features = prepare_features(validation_rows)
-num_cols, cat_cols = get_feature_columns(train_features)
-train_model_data = train_features.assign(
-    default_90dpd_12m=train_rows["default_90dpd_12m"].to_numpy()
-)
-validation_model_data = validation_features.assign(
-    default_90dpd_12m=validation_rows["default_90dpd_12m"].to_numpy()
-)
-train_models(train_model_data, validation_model_data, num_cols, cat_cols)
-```
-
-`train_models` writes `models/lr_model.pkl`, `models/xgb_model.pkl`, and `models/feature_columns.pkl`. Once those artifacts exist, score one raw application row (the same application-time columns used for training):
-
-```python
 from src.score import score_application
 
-result = score_application(application_dict)
-print(result)  # {"pd": ..., "decision": ..., "reasons": [...]}
+application = pd.read_csv("data/loan_applications.csv").iloc[0].to_dict()
+result = score_application(application)
+print(result)  # {"pd": 0.0, "decision": "APPROVE", "reasons": [...]}
 ```
 
-The training and scoring functions are the current reusable interfaces. The notebooks remain exploratory; a single command that rebuilds the target, temporal split, training data, and model artifacts from raw CSV files has not yet been added.
+The result contains the probability of default (`pd`), a decision, and up to three risk reasons. Decision values are `APPROVE` for PD <= 0.33, `REFER` for 0.33 < PD <= 0.50, and `REJECT` for PD > 0.50; `REFER` is the current label for referral to an officer. Scoring requires the saved model artifacts and the `shap` dependency. Run the existing tests from the project root with `python -m pytest`.
 
 ## Target and feature notes
 
